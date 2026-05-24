@@ -21,7 +21,7 @@ export const mintTokens = async (fromAddress: string, amount: number) => {
     await mintTo(connection, keypair, TOKEN_MINT_ADDRESS, associatedTokenAccount.address, keypair, amount);
 }
 
-export const burnTokens = async (fromAddress: string, toAddress: string, amount: number) => {
+export const burnTokens = async (fromAddress: string, amount: number) => {
     console.log("Burning tokens");
     const tokenAccount= await getOrCreateAssociatedTokenAccount(
         connection,
@@ -40,7 +40,7 @@ export const burnTokens = async (fromAddress: string, toAddress: string, amount:
     )
 }
 
-export const sendNativeTokens = async (fromAddress: string, toAddress: string, amount: number) => {
+export const sendNativeTokens = async (toAddress: string, amount: number) => {
     console.log("Sending native tokens");
 
     const latestBlockHash= await connection.getLatestBlockhash();

@@ -31,7 +31,6 @@ app.post("/", (req, res)=>{
 const recievedTxns: TxnType[]= [];
 
 app.post('/helius', async(req, res) => {
-    // console.dir(req.body, {depth: null});
     let txnType: string="";
 
     if(req.body[0].nativeTransfers.length>0){
@@ -58,7 +57,6 @@ app.post('/helius', async(req, res) => {
         const amount = incomingTxn.amount;
         const timestamp = req.body[0].timestamp;
         console.log("timestamp", timestamp);
-        // const amount =1;
 
         const txn= {
             amount,
@@ -69,30 +67,20 @@ app.post('/helius', async(req, res) => {
         }
 
         recievedTxns.push(txn);
-        // await mintTokens(fromAddress, amount);
+        await mintTokens(fromAddress, amount);
         return res.status(200).json({message: "Tokens minted successfully"});
     }
     else{
         const incomingTxn= req.body[0].tokenTransfers[0];
         const fromUserAddress = incomingTxn.fromUserAccount;
         const fromUserTokenAddress = incomingTxn.fromTokenAccount;
-        const amount = incomingTxn.tokenAmount;
+        const tokenAmount = incomingTxn.tokenAmount;
+        const solAmount = incomingTxn.tokenAmount;
 
-        // await burnTokens(fromAddress, toAddress, amount);
-        // await sendNativeTokens(fromAddress, toAddress, amount);
+        await burnTokens(fromUserAddress, tokenAmount);
+        await sendNativeTokens(fromUserAddress, tokenAmount);
     }
 
-    // if()
-
-    // if (type === "received_native_sol") {
-    //     await mintTokens(fromAddress, toAddress, amount);
-    // } else {
-    //     // What could go wrong here?
-    //     await burnTokens(fromAddress, toAddress, amount);
-    //     await sendNativeTokens(fromAddress, toAddress, amount);
-    // }
-
-    // res.send('Transaction successful');
 });
 
 app.listen(3000, () => {
