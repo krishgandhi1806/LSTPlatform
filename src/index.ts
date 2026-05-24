@@ -68,6 +68,7 @@ app.post("/", (req, res) => {
 // Process-local only. A restart clears history and idempotency state.
 const receivedTxns: LedgerEntry[] = [];
 const processedSignatures = new Set<string>();
+const inFlightSignatures = new Set<string>();
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null;
@@ -127,6 +128,24 @@ const recordLedgerEntry = (entry: LedgerEntry) => {
   console.log("Ledger entry", formatLedgerEntry(entry));
 };
 
+const reserveSignature = (signature: string) => {
+  if (processedSignatures.has(signature) || inFlightSignatures.has(signature)) {
+    return false;
+  }
+
+  inFlightSignatures.add(signature);
+  return true;
+};
+
+const completeSignature = (signature: string) => {
+  inFlightSignatures.delete(signature);
+  processedSignatures.add(signature);
+};
+
+const releaseSignature = (signature: string) => {
+  inFlightSignatures.delete(signature);
+};
+
 const getEventTimestamp = (event: HeliusEvent) => {
   if (typeof event.timestamp !== "number" || !Number.isFinite(event.timestamp)) {
     throw new Error("Webhook event is missing a valid timestamp");
@@ -166,7 +185,7 @@ const handleNativeDeposit = async (event: HeliusEvent) => {
   }
 
   const signature = getEventSignature(event);
-  if (processedSignatures.has(signature)) {
+  if (!reserveSignature(signature)) {
     return { handled: true, response: { message: "Duplicate webhook ignored" } };
   }
 
@@ -185,30 +204,35 @@ const handleNativeDeposit = async (event: HeliusEvent) => {
     throw new Error("Calculated LST issuance amount must be positive");
   }
 
-  const exchangeRate = getCurrentExchangeRate(timestamp);
-  await mintTokens(nativeTransfer.fromUserAccount, lstBaseUnits);
+  try {
+    const exchangeRate = getCurrentExchangeRate(timestamp);
+    await mintTokens(nativeTransfer.fromUserAccount, lstBaseUnits);
 
-  processedSignatures.add(signature);
-  recordLedgerEntry({
-    signature,
-    kind: "deposit",
-    walletAddress: nativeTransfer.fromUserAccount,
-    timestamp,
-    solLamports: solLamports.toString(),
-    lstBaseUnits: lstBaseUnits.toString(),
-    appliedExchangeRate: exchangeRate,
-  });
-
-  return {
-    handled: true,
-    response: {
-      message: "Tokens minted successfully",
+    completeSignature(signature);
+    recordLedgerEntry({
       signature,
+      kind: "deposit",
+      walletAddress: nativeTransfer.fromUserAccount,
+      timestamp,
       solLamports: solLamports.toString(),
       lstBaseUnits: lstBaseUnits.toString(),
-      exchangeRate,
-    },
-  };
+      appliedExchangeRate: exchangeRate,
+    });
+
+    return {
+      handled: true,
+      response: {
+        message: "Tokens minted successfully",
+        signature,
+        solLamports: solLamports.toString(),
+        lstBaseUnits: lstBaseUnits.toString(),
+        exchangeRate,
+      },
+    };
+  } catch (error) {
+    releaseSignature(signature);
+    throw error;
+  }
 };
 
 const handleLstRedemption = async (event: HeliusEvent) => {
@@ -218,7 +242,7 @@ const handleLstRedemption = async (event: HeliusEvent) => {
   }
 
   const signature = getEventSignature(event);
-  if (processedSignatures.has(signature)) {
+  if (!reserveSignature(signature)) {
     return { handled: true, response: { message: "Duplicate webhook ignored" } };
   }
 
@@ -237,31 +261,36 @@ const handleLstRedemption = async (event: HeliusEvent) => {
     throw new Error("Calculated SOL redemption amount must be positive");
   }
 
-  const exchangeRate = getCurrentExchangeRate(timestamp);
-  await burnTreasuryTokens(lstBaseUnits);
-  await sendNativeTokens(tokenTransfer.fromUserAccount, solLamports);
+  try {
+    const exchangeRate = getCurrentExchangeRate(timestamp);
+    await burnTreasuryTokens(lstBaseUnits);
+    await sendNativeTokens(tokenTransfer.fromUserAccount, solLamports);
 
-  processedSignatures.add(signature);
-  recordLedgerEntry({
-    signature,
-    kind: "redeem",
-    walletAddress: tokenTransfer.fromUserAccount,
-    timestamp,
-    solLamports: solLamports.toString(),
-    lstBaseUnits: lstBaseUnits.toString(),
-    appliedExchangeRate: exchangeRate,
-  });
-
-  return {
-    handled: true,
-    response: {
-      message: "Tokens redeemed successfully",
+    completeSignature(signature);
+    recordLedgerEntry({
       signature,
+      kind: "redeem",
+      walletAddress: tokenTransfer.fromUserAccount,
+      timestamp,
       solLamports: solLamports.toString(),
       lstBaseUnits: lstBaseUnits.toString(),
-      exchangeRate,
-    },
-  };
+      appliedExchangeRate: exchangeRate,
+    });
+
+    return {
+      handled: true,
+      response: {
+        message: "Tokens redeemed successfully",
+        signature,
+        solLamports: solLamports.toString(),
+        lstBaseUnits: lstBaseUnits.toString(),
+        exchangeRate,
+      },
+    };
+  } catch (error) {
+    releaseSignature(signature);
+    throw error;
+  }
 };
 
 app.get("/ledger", (_req, res) => {
@@ -270,6 +299,7 @@ app.get("/ledger", (_req, res) => {
     treasuryWalletAddress,
     treasuryTokenAccountAddress,
     processedSignatures: processedSignatures.size,
+    inFlightSignatures: inFlightSignatures.size,
     entries: receivedTxns.map(formatLedgerEntry),
   });
 });
