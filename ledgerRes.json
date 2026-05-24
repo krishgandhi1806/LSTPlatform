@@ -1,0 +1,58 @@
+{
+    "protocolStartTimestamp": 1779571200,
+    "treasuryWalletAddress": "6jX4BchZcFbtP11U6gRuQTPHSQcPDRoKn1xt2YoXhwaH",
+    "treasuryTokenAccountAddress": "85qjfdByY1zef2jjiUitKghkMqVpP6k71rWPCbCRmDZf",
+    "processedSignatures": 4,
+    "entries": [
+        {
+            "signature": "5WqCdKrpxz8YRCqF8nhbgN34VmM2ZmtJVTxbLDYjF62jBUFMSX6YtScmxqTHWPpu3dCYzL5tkaFz1ixLyFuurs5r",
+            "kind": "deposit",
+            "walletAddress": "4Z4yFezNccbYauA1giqpCKDxxzYGFJDRW6uhJNy5Y8nD",
+            "timestamp": 1779625886,
+            "solLamports": "20000",
+            "lstBaseUnits": "19997",
+            "appliedExchangeRate": 1.000104044901,
+            "note": "Process-local only. This ledger resets on restart."
+        },
+        {
+            "signature": "3SwFrgsrRaUTSnSuC8uapTVfuZHdZkoAf7obC7Kb86SgyTshmimCRxU4nvZFoi7kWp3on56pjJVx5c3qjQ2ybNyt",
+            "kind": "deposit",
+            "walletAddress": "4Z4yFezNccbYauA1giqpCKDxxzYGFJDRW6uhJNy5Y8nD",
+            "timestamp": 1779626082,
+            "solLamports": "200000",
+            "lstBaseUnits": "199979",
+            "appliedExchangeRate": 1.000104417808,
+            "note": "Process-local only. This ledger resets on restart."
+        },
+        {
+            "signature": "5eMcgAdogC1Js6tbS2F1qcG4JBRhc59zmeFq8UGe1mXDtgp5i4V3oqj7akuY5nR8pycE1Fat1fH1a8fj5fxpkG7F",
+            "kind": "deposit",
+            "walletAddress": "4Z4yFezNccbYauA1giqpCKDxxzYGFJDRW6uhJNy5Y8nD",
+            "timestamp": 1779626185,
+            "solLamports": "1000000000",
+            "lstBaseUnits": "999895397",
+            "appliedExchangeRate": 1.000104613774,
+            "note": "Process-local only. This ledger resets on restart."
+        },
+        {
+            "signature": "58xwuJGxCGnRFb6sJyWszZ6yMxqzw48LKkfGqHfpt1U6FZm14W6Q2eq6uXuqMY83cUb8657t91dxsQBxNAZErGHF",
+            "kind": "redeem",
+            "walletAddress": "4Z4yFezNccbYauA1giqpCKDxxzYGFJDRW6uhJNy5Y8nD",
+            "timestamp": 1779626264,
+            "solLamports": "900094287",
+            "lstBaseUnits": "900000000",
+            "appliedExchangeRate": 1.000104764079,
+            "note": "Process-local only. This ledger resets on restart."
+        },
+        {
+            "signature": "58xwuJGxCGnRFb6sJyWszZ6yMxqzw48LKkfGqHfpt1U6FZm14W6Q2eq6uXuqMY83cUb8657t91dxsQBxNAZErGHF",
+            "kind": "redeem",
+            "walletAddress": "4Z4yFezNccbYauA1giqpCKDxxzYGFJDRW6uhJNy5Y8nD",
+            "timestamp": 1779626264,
+            "solLamports": "900094287",
+            "lstBaseUnits": "900000000",
+            "appliedExchangeRate": 1.000104764079,
+            "note": "Process-local only. This ledger resets on restart."
+        }
+    ]
+}

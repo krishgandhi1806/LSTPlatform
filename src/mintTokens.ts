@@ -1,15 +1,34 @@
-import {mintTo, getOrCreateAssociatedTokenAccount, TOKEN_PROGRAM_ID, burn} from "@solana/spl-token";
+import {
+    burn,
+    getAssociatedTokenAddressSync,
+    getOrCreateAssociatedTokenAccount,
+    mintTo,
+} from "@solana/spl-token";
 import { Connection, Keypair, PublicKey, sendAndConfirmTransaction, SystemProgram, Transaction } from "@solana/web3.js";
-import {PRIVATE_KEY, TOKEN_MINT_ADDRESS} from "./address.js";
+import {PRIVATE_KEY, PUBLIC_KEY, TOKEN_MINT_ADDRESS} from "./address.js";
 
 const connection = new Connection("https://api.devnet.solana.com");
 
 const secretKey = Uint8Array.from(JSON.parse(PRIVATE_KEY!));
 const keypair= Keypair.fromSecretKey(secretKey);
 const mint= new PublicKey(TOKEN_MINT_ADDRESS);
+const treasuryPublicKey = new PublicKey(PUBLIC_KEY!);
+const treasuryTokenAccount = getAssociatedTokenAddressSync(mint, treasuryPublicKey);
+
+const toSafeIntegerAmount = (amount: bigint) => {
+    if (amount < 0n) {
+        throw new Error("Amount cannot be negative");
+    }
+
+    if (amount > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new Error("Amount exceeds Number.MAX_SAFE_INTEGER");
+    }
+
+    return Number(amount);
+};
 
 
-export const mintTokens = async (fromAddress: string, amount: number) => {
+export const mintTokens = async (fromAddress: string, amount: bigint) => {
     console.log("Minting tokens");
     const associatedTokenAccount = await getOrCreateAssociatedTokenAccount(
         connection, // Connection to the local validator.
@@ -18,29 +37,36 @@ export const mintTokens = async (fromAddress: string, amount: number) => {
         new PublicKey(fromAddress), // Account that owns the token account.
     );
     console.log("Associated Token Account", associatedTokenAccount);
-    await mintTo(connection, keypair, TOKEN_MINT_ADDRESS, associatedTokenAccount.address, keypair, amount);
-}
-
-export const burnTokens = async (fromAddress: string, amount: number) => {
-    console.log("Burning tokens");
-    const tokenAccount= await getOrCreateAssociatedTokenAccount(
+    await mintTo(
         connection,
         keypair,
         TOKEN_MINT_ADDRESS,
-        new PublicKey(fromAddress)
-    )
+        associatedTokenAccount.address,
+        keypair,
+        amount,
+    );
+}
+
+export const burnTreasuryTokens = async (amount: bigint) => {
+    console.log("Burning tokens from treasury ATA");
+    await getOrCreateAssociatedTokenAccount(
+        connection,
+        keypair,
+        TOKEN_MINT_ADDRESS,
+        treasuryPublicKey,
+    );
 
     await burn(
         connection,
         keypair,
-        tokenAccount.address,
+        treasuryTokenAccount,
         mint,
         keypair.publicKey,
         amount
     )
 }
 
-export const sendNativeTokens = async (toAddress: string, amount: number) => {
+export const sendNativeTokens = async (toAddress: string, amount: bigint) => {
     console.log("Sending native tokens");
 
     const latestBlockHash= await connection.getLatestBlockhash();
@@ -49,7 +75,7 @@ export const sendNativeTokens = async (toAddress: string, amount: number) => {
     const transfer= SystemProgram.transfer({
         fromPubkey: keypair.publicKey,
         toPubkey: recipientPublicKey,
-        lamports: amount
+        lamports: toSafeIntegerAmount(amount)
     })
 
     const transaction= new Transaction();
@@ -67,3 +93,5 @@ export const sendNativeTokens = async (toAddress: string, amount: number) => {
     })
     
 }
+
+export const getTreasuryTokenAccountAddress = () => treasuryTokenAccount.toBase58();
